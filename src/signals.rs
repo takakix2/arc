@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 pub struct Signal {
     #[serde(rename = "type")]
     pub r_type: String,
-    pub payload: String,
+    pub payload: serde_json::Value,
     pub timestamp: String,
 }
 
@@ -36,12 +36,12 @@ pub fn read_signals(arc_dir: &Path) -> Result<Vec<Signal>> {
     Ok(signals?)
 }
 
-pub fn record(arc_dir: &Path, type_: &str, payload: &str) -> Result<()> {
+pub fn record<T: Serialize>(arc_dir: &Path, type_: &str, payload: T) -> Result<()> {
     let signal_file = arc_dir.join("signals.jsonl");
 
     let signal = Signal {
         r_type: type_.to_string(),
-        payload: payload.to_string(),
+        payload: serde_json::to_value(payload)?,
         timestamp: Local::now().to_rfc3339(),
     };
 
@@ -56,8 +56,8 @@ pub fn record(arc_dir: &Path, type_: &str, payload: &str) -> Result<()> {
 
     writeln!(file, "{}", json)?;
     
-    // Also print to stdout for now
-    println!("Signal recorded: {} {}", type_, payload);
+    // Also print to stdout for now (pretty print payload)
+    println!("Signal recorded: {} {}", type_, signal.payload);
 
     Ok(())
 }

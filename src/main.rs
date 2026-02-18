@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::PathBuf;
+use serde_json::json;
 
 mod signals;
 
@@ -44,8 +45,15 @@ fn main() -> Result<()> {
             // Initialize .arc structure
             let arc_dir = signals::init(path)?;
             
-            // Record the initialization signal
-            signals::record(&arc_dir, "init", &format!("Created project at {:?}", path))?;
+            // Record the initialization signal (Structured Payload)
+            signals::record(
+                &arc_dir, 
+                "init", 
+                json!({
+                    "path": path,
+                    "version": env!("CARGO_PKG_VERSION")
+                })
+            )?;
 
             println!("✨ arc project initialized successfully.");
         }
@@ -62,7 +70,14 @@ fn main() -> Result<()> {
                  println!("Type        | Timestamp                    | Payload");
                  println!("---------------------------------------------------");
                  for signal in signals {
-                     println!("{:<11} | {} | {}", signal.r_type, signal.timestamp, signal.payload);
+                     // Pretty-print payload but compact
+                     let payload_str = format!("{}", signal.payload);
+                     let payload_display = if payload_str.len() > 50 {
+                         format!("{}...", &payload_str[0..47])
+                     } else {
+                         payload_str
+                     };
+                     println!("{:<11} | {} | {}", signal.r_type, signal.timestamp, payload_display);
                  }
                  println!("---------------------------------------------------");
             } else {
@@ -88,16 +103,31 @@ fn main() -> Result<()> {
 
              println!("🚀 Executing: {} {}", cmd, cmd_args.join(" "));
              
-             // Record start
-             signals::record(&arc_dir, "exec_start", &format!("Command: {} {}", cmd, cmd_args.join(" ")))?;
+             // Record start (Structured Payload)
+             signals::record(
+                 &arc_dir, 
+                 "exec_start", 
+                 json!({
+                     "command": cmd,
+                     "args": cmd_args,
+                     "cwd": current_dir
+                 })
+             )?;
 
              let status = std::process::Command::new(cmd)
                  .args(cmd_args)
                  .status()
                  .context("Failed to execute command")?;
 
-             // Record end
-             signals::record(&arc_dir, "exec_end", &format!("ExitCode: {}", status))?;
+             // Record end (Structured Payload)
+             signals::record(
+                 &arc_dir, 
+                 "exec_end", 
+                 json!({
+                     "exit_code": status.code(),
+                     "success": status.success()
+                 })
+             )?;
              
              if !status.success() {
                  std::process::exit(status.code().unwrap_or(1));
