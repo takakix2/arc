@@ -1,0 +1,189 @@
+🌈🔥 arc — 設計まとめ
+以下は、arc の設計を
+体系化したアーキテクチャドキュメントです。
+
+1. 世界観と哲学（火花・光・物語・儀式）
+arc は Ruby のための 意味のあるシステムツールであり、
+内部構造は以下の 4 層で構成される：
+
+層	役割	具体例
+火花（Spark）	NDJSON イベント	signals writer
+光（Light）	状態の可視化	state/*.json
+物語（Story）	snapshots / timeline	history/
+儀式（Ritual）	state machine / CLI	arc init / install / run
+この世界観が arc のすべての設計に貫かれている。
+
+2. flux プロトコル v1 の統合
+arc は flux v1 の リファレンス実装として設計されている。
+
+NDJSON 1 行 = 1 イベント
+
+必須フィールド：v, source, type, event
+
+unknown フィールド許容
+
+required のみ厳密チェック
+
+append-only
+
+registry による schema 管理
+
+3. signals モジュール（火花の三位一体）
+コード
+signals/
+  writer.rs     → 火花を生む（append-only）
+  reader.rs     → 火花を観測する（list/tail/view/stats）
+  validator.rs  → 火花の安全性を保証（schema 検証）
+  registry.rs   → 火花の意味辞書（schema.json）
+  event.rs      → 火花の型（Event）
+✔ writer
+append-only
+
+flux v1 の構文を生成
+
+payload をマージ
+
+✔ reader
+list / tail / view / stats
+
+NDJSON を Event に変換
+
+✔ validator
+registry と照合
+
+required 厳密
+
+型は緩く
+
+unknown 許容
+
+✔ registry
+schema.json  を読み込む
+
+type:event → schema の辞書
+
+4. state machine（儀式）
+arc の内部状態は 9 ステート：
+
+コード
+INIT → DETECT_RUBY → RESOLVE_DEPS → INSTALL_DEPS → READY
+READY → EXECUTE → FINISHED
+READY → UPDATE → RESOLVE_DEPS
+ANY → CLEANUP → FINISHED
+すべての遷移は signals emit を伴う。
+
+5. history / snapshots / rollback（物語）
+コード
+.arc/history/
+  snapshots/<id>/
+    ruby.json
+    gems.json
+    lock.json
+    state.json
+  timeline.json
+snapshot = 静止画
+
+timeline = 物語の目次
+
+rollback = 分岐
+
+signals は巻き戻さない（歴史は不変）
+
+6. state/*.json（光）
+コード
+.arc/state/
+  current.json
+  last_action.json
+  rollback_point.json
+  meta.json
+current.json  → 現在の姿
+
+last_action.json → 最後の火花
+
+rollback_point.json → 巻き戻し先
+
+meta.json  → arc の自己記述
+
+7. CLI（儀式の入口）
+clap の enum で完全に表現：
+
+コード
+arc init
+arc install deps
+arc install ruby
+arc run ruby script.rb
+arc signals list
+arc rollback
+CLI = 型
+型 = 儀式
+儀式 = arc の世界観
+
+8. src/lib.rs / src/main.rs（骨格）
+lib.rs
+モジュールの中心
+
+signals / state / history / machine を re-export
+
+main.rs
+CLI パース
+
+signals writer 準備
+
+registry 読み込み
+
+validator 準備
+
+state machine 起動
+
+🌟 ここまでで arc のアーキテクチャは完全に成立している
+あなたが作ったのは、
+単なる CLI ツールではなく、
+意味のあるシステムです。
+
+🔥 実装ステップの確認
+あなたが挙げたステップは素晴らしい。
+ただし、arc を“動くプロダクト”にするには あと 3 つだけ追加すると完璧になります。
+
+✔ あなたが挙げたステップ（正しい）
+1. src/cli.rs を完成させる（clap の enum 版）
+2. state モジュール（current.json の読み書き）を作る
+3. history/snapshots の実装を始める
+4. ruby モジュール（ruby-install or 自前管理）を作る
+5. deps solver の設計（bundler 互換 or 独自）
+✔ 追加すべき 3 ステップ
+6. signals を state machine に完全統合する
+すべての遷移で emit
+
+validator を通す
+
+writer に append
+
+7. exec モジュール（Ruby コマンド実行環境）
+arc run ruby script.rb
+
+PATH の書き換え
+
+GEM_HOME の設定
+
+sandbox 的な実行
+
+8. env モジュール（環境変数管理）
+.arc/env/
+
+Ruby / gems / bin の PATH を構築
+
+exec モジュールと連携
+
+🌈🔥 最終的な実装ロードマップ（完全版）
+コード
+1. CLI（clap enum）
+2. signals（writer/reader/validator/registry）
+3. state（current.json 他）
+4. state machine（遷移と emit）
+5. history/snapshots/rollback
+6. ruby（ruby-install or 自前管理）
+7. deps solver（bundler 互換 or 独自）
+8. exec（Ruby 実行環境）
+9. env（PATH/GEM_HOME 管理）
+10. arc init / install / run の統合
+これで arc は 実際に動くツールになる。
