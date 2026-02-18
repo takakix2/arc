@@ -5,3 +5,13 @@ editor_backup/
 example_ruby_app/
 nested_app/
 signals.jsonl
+
+# Local Design Docs
+ruby版uv_arc正式版.md
+ruby版uv_arc正式版.txt
+arc_description.txt
+implementation_plan.md
+
+# Sensitive / Environment
+.env
+.env.*
