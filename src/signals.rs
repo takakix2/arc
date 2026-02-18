@@ -1,6 +1,7 @@
 use anyhow::{bail, Context, Result};
 use chrono::Local;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -10,6 +11,64 @@ use uuid::Uuid;
 const FLUX_DIR: &str = ".flux";
 /// Signal ログファイル名
 const SIGNAL_FILE: &str = "signals.jsonl";
+/// プロジェクト固有の環境ディレクトリ (Gem のインストール先)
+pub const ARC_ENV_DIR: &str = ".arc/env";
+/// グローバルキャッシュルート名
+pub const ARC_CACHE_ROOT: &str = ".arc/cache";
+
+/// グローバルなキャッシュディレクトリを取得する (~/.arc/cache)
+pub fn get_global_cache_dir() -> PathBuf {
+    // std::env::home_dir() は deprecated のため、HOME 環境変数を直接参照する
+    let home = std::env::var("HOME")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("/tmp"));
+    home.join(ARC_CACHE_ROOT)
+}
+
+/// Gem のグローバルキャッシュディレクトリを取得する (~/.arc/cache/gems)
+pub fn get_global_gems_dir() -> PathBuf {
+    get_global_cache_dir().join("gems")
+}
+
+// ─────────────────────────────────────────────
+// SignalType (型安全なシグナル種別)
+// ─────────────────────────────────────────────
+
+/// Signal の種別を型安全に表現する enum。
+/// `Display` を実装しているため、NDJSON への文字列変換は自動で行われる。
+#[derive(Debug, Clone, PartialEq)]
+pub enum SignalType {
+    Init,
+    ExecStart,
+    ExecEnd,
+    InstallStart,
+    InstallEnd,
+    RunStart,
+    RunEnd,
+    Add,
+    Remove,
+    Bootstrap,
+    Undo,
+}
+
+impl fmt::Display for SignalType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            SignalType::Init => "init",
+            SignalType::ExecStart => "exec_start",
+            SignalType::ExecEnd => "exec_end",
+            SignalType::InstallStart => "install_start",
+            SignalType::InstallEnd => "install_end",
+            SignalType::RunStart => "run_start",
+            SignalType::RunEnd => "run_end",
+            SignalType::Add => "add",
+            SignalType::Remove => "remove",
+            SignalType::Bootstrap => "bootstrap",
+            SignalType::Undo => "undo",
+        };
+        write!(f, "{}", s)
+    }
+}
 
 // ─────────────────────────────────────────────
 // Signal (イベント)
@@ -71,14 +130,14 @@ impl FluxProject {
     }
 
     /// 既存の Flux プロジェクトを開く。
-    /// `.flux/` ディレクトリが存在しない場合はエラーを返す。
+    /// カレントディレクトリから `.flux/` を探す。存在しない場合はエラーを返す。
     pub fn open(project_root: &Path) -> Result<Self> {
         let flux_dir = project_root.join(FLUX_DIR);
         let signal_file = flux_dir.join(SIGNAL_FILE);
 
         if !flux_dir.exists() {
             bail!(
-                "Not a Flux project: {:?} not found. Run `init` first.",
+                "Not a Flux project: {:?} not found. Run `arc init` first.",
                 flux_dir
             );
         }
@@ -91,11 +150,11 @@ impl FluxProject {
     }
 
     /// Signal を記録し、記録された Signal を返す。
-    /// stdout への出力は行わない（呼び出し側の責務）。
-    pub fn record<T: Serialize>(&self, type_: &str, payload: T) -> Result<Signal> {
+    /// `SignalType` を受け取ることで型安全性を保証する。
+    pub fn record<T: Serialize>(&self, signal_type: SignalType, payload: T) -> Result<Signal> {
         let signal = Signal {
             id: Uuid::now_v7().to_string(),
-            r_type: type_.to_string(),
+            r_type: signal_type.to_string(),
             payload: serde_json::to_value(payload)?,
             timestamp: Local::now().to_rfc3339(),
         };
@@ -129,15 +188,6 @@ impl FluxProject {
         }
 
         Ok(signals)
-    }
-
-    /// Signal の総数を返す。
-    pub fn signal_count(&self) -> Result<usize> {
-        if !self.signal_file.exists() {
-            return Ok(0);
-        }
-        let content = fs::read_to_string(&self.signal_file)?;
-        Ok(content.lines().count())
     }
 }
 

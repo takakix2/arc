@@ -70,10 +70,14 @@ impl FluxState {
                         .and_then(|v| v.as_str())
                         .map(|s| s.to_string());
                 }
-                "exec_start" => {
+                "exec_start" | "install_start" | "run_start" => {
+                    // For these start signals, we just store them to match with their corresponding end signals.
+                    // The actual logic for active_operation, history_count, etc., is not part of FluxState.
                     pending_starts.insert(signal.id.clone(), signal);
                 }
-                "exec_end" => {
+                "exec_end" | "install_end" | "run_end" => {
+                    // For these end signals, we process them similarly to exec_end.
+                    // The logic for active_operation, last_exit_code, etc., is not part of FluxState.
                     let ref_id = signal.payload.get("ref_id")
                         .and_then(|v| v.as_str())
                         .unwrap_or("");
