@@ -22,6 +22,11 @@ enum Commands {
     },
     /// 現在の環境の状態を表示する（Flux State）
     State,
+    /// 任意のコマンドを実行し、結果を記録する（Flux Core 汎用機能）
+    Exec {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        command: Vec<String>,
+    },
 }
 
 fn main() -> Result<()> {
@@ -63,6 +68,40 @@ fn main() -> Result<()> {
             } else {
                 println!("No .arc directory found. Run `arc init <path>` to start.");
             }
+        }
+        Commands::Exec { command: args } => {
+             let current_dir = std::env::current_dir()?;
+             let arc_dir = current_dir.join(".arc");
+             
+             if !arc_dir.exists() {
+                 eprintln!("Error: Not an arc project. Run `arc init` first.");
+                 std::process::exit(1);
+             }
+
+             if args.is_empty() {
+                 eprintln!("Error: No command provided.");
+                 std::process::exit(1);
+             }
+
+             let cmd = &args[0];
+             let cmd_args = &args[1..];
+
+             println!("🚀 Executing: {} {}", cmd, cmd_args.join(" "));
+             
+             // Record start
+             signals::record(&arc_dir, "exec_start", &format!("Command: {} {}", cmd, cmd_args.join(" ")))?;
+
+             let status = std::process::Command::new(cmd)
+                 .args(cmd_args)
+                 .status()
+                 .context("Failed to execute command")?;
+
+             // Record end
+             signals::record(&arc_dir, "exec_end", &format!("ExitCode: {}", status))?;
+             
+             if !status.success() {
+                 std::process::exit(status.code().unwrap_or(1));
+             }
         }
     }
 
