@@ -53,6 +53,7 @@ Ruby, Python, Node.js, Go, Rust — どのプロジェクトでも `.flux/signal
 
 ```json
 {
+  "id": "string (UUID v7)",
   "type": "string",
   "payload": "any (JSON Value)",
   "timestamp": "string (RFC 3339)"
@@ -63,6 +64,7 @@ Ruby, Python, Node.js, Go, Rust — どのプロジェクトでも `.flux/signal
 
 | フィールド | 型 | 必須 | 説明 |
 |---|---|---|---|
+| `id` | `String` (UUID v7) | ✅ | Signal の一意識別子。時系列ソート可能 |
 | `type` | `String` | ✅ | Signal の種別。`init`, `exec_start`, `exec_end`, `snapshot` など |
 | `payload` | `serde_json::Value` | ✅ | 任意の構造化データ。型は Signal Type に依存 |
 | `timestamp` | `String` (RFC 3339) | ✅ | Signal が記録された時刻。ローカルタイムゾーン付き |
@@ -74,6 +76,7 @@ Ruby, Python, Node.js, Go, Rust — どのプロジェクトでも `.flux/signal
 
 ```json
 {
+  "id": "019c6fb8-3aa1-7570-af92-c5ca5d70d7ba",
   "type": "init",
   "payload": {
     "path": "my_project",
@@ -88,6 +91,7 @@ Ruby, Python, Node.js, Go, Rust — どのプロジェクトでも `.flux/signal
 
 ```json
 {
+  "id": "019c6fb8-3aa7-7f81-a0ce-b82c8ad46c74",
   "type": "exec_start",
   "payload": {
     "command": "bundle",
@@ -103,10 +107,13 @@ Ruby, Python, Node.js, Go, Rust — どのプロジェクトでも `.flux/signal
 
 ```json
 {
+  "id": "019c6fb8-3aaa-7181-ba2e-43df7d8bb33d",
   "type": "exec_end",
   "payload": {
+    "ref_id": "019c6fb8-3aa7-7f81-a0ce-b82c8ad46c74",
     "exit_code": 0,
-    "success": true
+    "success": true,
+    "duration_ms": 3420
   },
   "timestamp": "2026-02-18T16:32:58+09:00"
 }
