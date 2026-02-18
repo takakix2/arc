@@ -1,55 +1,92 @@
-🌈🔥 arc は「Ruby 版 uv」である — 正式な言語化
----
+# arc
 
-arc は Ruby のための “uv 的アプローチ” を実現する新しいツールチェーンである。
+**Flux Core のショーケース — Ruby ツールチェーンとしての実証実装**
 
-uv が Python に対して行ったこと——
-
-- 仮想環境の自動管理
-- 依存解決とインストールの高速化
-- 実行環境の完全な再現性
-- すべてを 1 つのツールに統合
-- Rust による圧倒的な速度
-- ローカルに閉じた安全な実行モデル
-
-すべてを Ruby の世界に持ち込むのが **arc**。
-
-つまり arc は：
-
-- Ruby のための高速・一体型・再現性重視のツールチェーン。
-- Ruby の “uv” として設計されている。
-
-## 🔥 Ruby 版 uv としての arc の特徴（対応表）
-
-| uv（Python） | arc（Ruby） | 説明 |
-| :--- | :--- | :--- |
-| 仮想環境を自動生成 | .arc/env を自動生成 | Ruby の PATH / GEM_HOME を完全管理 |
-| 依存解決を高速化 | deps solver（bundler 互換 or 独自） | lockfile を高速に扱う |
-| パッケージを高速インストール | gems install | RubyGems を Rust で高速化 |
-| Python 実行を隔離 | arc exec / arc run | Ruby 実行環境を sandbox 化 |
-| Rust 製で高速 | Rust 製で高速 | Ruby の重い部分を Rust が肩代わり |
-| 1 ツールで完結 | arc 1 つで完結 | ruby-install / bundler / rbenv を統合 |
-
-## 🌟 uv にはない arc の独自性
-
-arc は uv の単なる模倣ではなく、**flux プロトコル × state machine × snapshots** という “意味のあるシステム” として進化している。
-
-1. **すべての動作が NDJSON（火花）として記録される**
-   - uv にはない「完全なイベントログ」
-2. **state machine による儀式的な動作**
-   - init → solve → install → run の流れが明確
-3. **snapshots / rollback による物語性**
-   - Ruby の環境を「巻き戻せる」
-4. **registry / validator による意味の保証**
-   - イベントの意味を schema で定義
-5. **arc の世界観（火花・光・物語）がある**
-   - uv よりも “意味の層” が厚い
-
-## 🔥 キャッチコピー
-
-**arc — Ruby のための高速・一体型ツールチェーン。**
-**Rust 製の “Ruby 版 uv”。**
-すべての動作が火花（signals）として記録され、環境は光（state）として可視化され、物語（history）として残る。
+> "すべての操作に意味を。すべての状態に物語を。"
 
 ---
-*arc is a next-generation Ruby toolchain powered by Flux Protocol.*
+
+## arc とは
+
+arc は **[Flux Core](docs/FLUX_CORE.md)** の設計実証を兼ねた Ruby ツールチェーンです。
+
+### Flux Core
+
+Flux Core は **汎用操作ログ記録・再生エンジン** です。
+Event Sourcing パターンを開発ツールの世界に持ち込み、CLI で実行されるあらゆる操作を構造化イベント（Signal）として記録します。
+
+- 📝 **Signal**: すべての操作を構造化 JSON で記録
+- 🦄 **State**: Signal ログから任意時点の環境状態を再構築
+- 🔄 **Replay**: Signal ログを別環境で再生し、環境を再現
+
+詳細は **[Flux Core ドキュメント](docs/FLUX_CORE.md)** を参照。
+
+### なぜ Ruby？
+
+Ruby エコシステムには [`rv`](https://github.com/nicholaides/rv)（Bundler/rbenv のコアメンテナーによる Rust 製 Ruby マネージャー）が登場しています。
+arc は rv と**競合**するのではなく、**補完**する存在です。
+
+| ツール | 役割 |
+|---|---|
+| **rv** | Ruby バージョン管理 + パッケージ管理（uv 相当） |
+| **arc** | 操作の記録・再現・監査（Flux Core のショーケース） |
+
+arc は `rv` や `bundler` の操作を `arc exec` で**ラップして記録**することで、
+「何をインストールしたか」「いつビルドが壊れたか」を追跡可能にします。
+
+---
+
+## クイックスタート
+
+```bash
+# ビルド
+cargo build --release
+
+# プロジェクト初期化
+arc init my_ruby_app
+
+# 任意のコマンドを記録実行
+cd my_ruby_app
+arc exec bundle install
+arc exec rails new .
+
+# 状態を確認
+arc state
+```
+
+---
+
+## コマンド
+
+### `arc init <path>`
+Flux プロジェクトを初期化し、`.arc/` ディレクトリを作成します。
+
+### `arc exec <command> [args...]`
+任意のコマンドを実行し、開始・終了を Signal として記録します。
+
+### `arc state`
+`.arc/signals.jsonl` から Signal ログを読み込み、現在の状態を表示します。
+
+---
+
+## 技術スタック
+
+- **言語**: Rust
+- **CLI**: clap v4
+- **シリアライゼーション**: serde + serde_json
+- **ログ形式**: NDJSON (Newline Delimited JSON)
+
+---
+
+## ロードマップ
+
+- [x] Phase 1: Flux Core (Signal 記録・読み込み・構造化ペイロード)
+- [ ] Phase 2: State Machine (Signal → State 変換)
+- [ ] Phase 3: Replay Engine (Signal ログの再生)
+- [ ] Phase 4: Flux Core の独立クレート化 (`flux-core` on crates.io)
+
+---
+
+## ライセンス
+
+MIT
