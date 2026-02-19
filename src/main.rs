@@ -24,5 +24,6 @@ fn main() -> Result<()> {
         Commands::Bootstrap { version }             => commands::bootstrap(version.as_deref()),
         Commands::Run { command }                   => commands::run(&command),
         Commands::Env                               => commands::env(),
+        Commands::Shell                             => commands::shell(),
     }
 }

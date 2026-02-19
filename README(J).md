@@ -1,14 +1,20 @@
-<div align="center">
 
 # ⚡ arc
 
-**すべての操作に意味がある。すべての状態が物語を語る。**
+**すべての操作に意味を。すべての状態に物語を。**
 
 [![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flux Core](https://img.shields.io/badge/Powered_by-Flux_Core-blueviolet)](docs/FLUX_CORE.md)
 
-*Ruby のための `uv` — タイムマシン付き。*
+*[Flux Core](docs/FLUX_CORE.md) アーキテクチャのフラッグシップ・ショーケース*
+
+---
+
+> **「ツールは記憶すべきだ。」**
+
+他のツールがシェルの高速化を目指す中、Arc は **エンジンの賢さ** を目指します。
+`uv` の速度と、イベントソーシングによる **タイムマシン機能** を融合させた、未来の Ruby パッケージマネージャーです。
 
 </div>
 
@@ -338,8 +344,21 @@ arc の設計を導く 3 つの原則：
 | **4. Undo と Diff** | ✅ 完了 | `arc undo`、`arc state --diff` |
 | **5. 設定** | ✅ 完了 | `.flux/config.toml`、動的 Ruby バージョン |
 | **6. 複数バージョン** | 📋 計画中 | 既存バージョンと並行した `arc bootstrap 3.4.0` |
-| **7. flux-core クレート** | 📋 計画中 | Flux Core をスタンドアロンクレートとして抽出 |
-| **8. macOS サポート** | 📋 計画中 | ARM64 バイナリサポート |
+| **7. タイムマシン機能 (v2)** | 🚀 計画中 | `arc checkout <id>` / `arc reset` / 環境の完全リプレイ |
+| **8. Windows サポート** | 🪟 計画中 | Rust 製ポータブルバイナリによるネイティブ対応 |
+| **9. flux-core クレート** | � 計画中 | Flux Core をスタンドアロンクレートとして抽出 |
+| **10. macOS サポート** | 📋 計画中 | ARM64 バイナリサポート |
+
+---
+
+## ❤️ プロジェクト支援
+
+Arc と Flux Core は、「環境構築で時間を溶かす時代」を終わらせるための挑戦です。
+
+もしこの **「ツールは記憶すべきだ (Flux Philosophy)」** というビジョンに共感していただけたら、ぜひ支援をご検討ください。
+いただいた支援は、主に **Windows 版開発のための機材購入** やテスト環境の整備に使われます。
+
+[**GitHub Sponsors**](#) | [**Buy Me a Coffee**](#)
 
 ---
 

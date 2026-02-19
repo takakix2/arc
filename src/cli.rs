@@ -67,4 +67,6 @@ pub enum Commands {
     },
     /// 現在の arc 環境情報を表示する (Ruby パス・GEM_HOME 等)
     Env,
+    /// arc 管理下の隔離環境でインタラクティブシェルを起動する
+    Shell,
 }

@@ -1,14 +1,20 @@
-<div align="center">
 
 # ⚡ arc
 
-**The Ruby package manager that never forgets.**
+**The Ruby package manager that looks into the future.**
 
 [![Rust](https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flux Core](https://img.shields.io/badge/Powered_by-Flux_Core-blueviolet)](docs/FLUX_CORE.md)
 
-*`uv` for Ruby — with a time machine built in.*
+*The Flagship Showcase of [Flux Core](docs/FLUX_CORE.md) architecture.*
+
+---
+
+> **"Tools should remember."**
+
+While other tools focus on being a faster shell, **Arc** focuses on being a **smarter engine**.
+It combines the speed of `uv` with the time-traveling capabilities of **Event Sourcing**.
 
 </div>
 
@@ -69,6 +75,9 @@ arc sync               # bundle install with binary cache
 arc run ruby app.rb
 arc run rails server
 
+# Enter an interactive isolated shell (NEW)
+arc shell              # bash/zsh with arc env loaded — type 'exit' to leave
+
 # See what happened
 arc state
 arc state --diff
@@ -86,7 +95,8 @@ arc state --diff
 | `arc remove <gem>` | Remove a gem from Gemfile and sync |
 | `arc sync` | Sync environment with Gemfile.lock (like `uv sync`) |
 | `arc run <cmd> [args...]` | Run a command in the isolated project environment |
-| `arc exec <cmd> [args...]` | Run any command with Flux logging |
+| `arc shell` | **Start an interactive shell inside the isolated environment** |
+| `arc exec <cmd> [args...]` | Run any command with Flux logging (system env) |
 | `arc env` | Show current environment info (Ruby path, GEM_HOME, version) |
 | `arc undo` | Reverse the last `add` or `remove` operation |
 | `arc state` | Show full operation history and statistics |
@@ -118,11 +128,17 @@ Shims are **implicit**. When they work, they're magic. When they break, they're 
 ### The arc way
 
 ```bash
-# With arc:
+# With arc (run mode):
 arc run ruby script.rb
 # → Always uses .arc/env/ruby_runtime/bin/ruby
 # → No PATH manipulation. No shell hooks. No surprises.
 # → Works identically in terminal, CI/CD, cron, VSCode, Docker
+
+# With arc (shell mode — for interactive development):
+arc shell
+# → Drops you into your $SHELL with .arc/env fully loaded
+# → ruby, gem, bundle all resolve to the project's isolated binaries
+# → Type 'exit' to return to your normal environment
 ```
 
 > **"arc never touches your PATH. What runs is always what you see."**
@@ -337,9 +353,23 @@ Three principles guide arc's design:
 | **3. Gem Management** | ✅ Done | `add`, `remove`, `sync`, gem binary cache |
 | **4. Undo & Diff** | ✅ Done | `arc undo`, `arc state --diff` |
 | **5. Config** | ✅ Done | `.flux/config.toml`, dynamic Ruby version |
-| **6. Multi-version** | 📋 Planned | `arc bootstrap 3.4.0` alongside existing versions |
-| **7. flux-core crate** | 📋 Planned | Extract Flux Core as a standalone crate |
-| **8. macOS support** | 📋 Planned | ARM64 binary support |
+| **6. arc shell** | ✅ Done | Interactive sub-shell with isolated env, Flux signal recording |
+| **7. Multi-version** | 📋 Planned | `arc use 3.4.0` alongside existing versions |
+| **8. Time Machine** | 🚀 Planned | `arc checkout <id>` / `arc reset` / Environment Replay |
+| **9. Windows Support** | 🪟 Planned | Native Windows support via portable Rust binary |
+| **10. flux-core crate** | 📦 Planned | Extract Flux Core as a standalone crate |
+| **11. macOS support** | 📋 Planned | ARM64 binary support |
+
+---
+
+## ❤️ Support the Project
+
+Arc aims to end the *"it works on my machine"* era by making environments reproducible and operations reversible.
+
+If you resonate with the **Flux Philosophy** (tools that remember), consider supporting the development.
+Funds will go towards **Windows hardware for porting** and server costs.
+
+[**GitHub Sponsors**](#) | [**Buy Me a Coffee**](#)
 
 ---
 

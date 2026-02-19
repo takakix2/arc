@@ -9,7 +9,7 @@ use crate::config::ArcConfig;
 use crate::display;
 use crate::gemfile;
 use crate::signals::{FluxProject, SignalType};
-use runner::ArcEnv;
+use runner::{ArcEnv, build_ld_library_path, inject_isolated_env, ruby_bin};
 
 // ─────────────────────────────────────────────
 // 定数
@@ -275,37 +275,29 @@ pub fn run(args: &[String]) -> Result<()> {
 pub fn env() -> Result<()> {
     let cwd = env::current_dir()?;
     let env_dir = cwd.join(crate::signals::ARC_ENV_DIR);
-    let ruby_bin = env_dir.join("ruby_runtime").join("bin").join("ruby");
-    let gem_home = &env_dir;
+    let ruby_bin_path = ruby_bin(&env_dir);
 
     eprintln!("⚡ arc env");
     eprintln!();
     eprintln!("  Project:   {}", cwd.display());
     eprintln!("  ARC_ENV:   {}", env_dir.display());
-    eprintln!("  GEM_HOME:  {}", gem_home.display());
+    eprintln!("  GEM_HOME:  {}", env_dir.display());
     eprintln!("  Ruby:      {}",
-        if ruby_bin.exists() { ruby_bin.display().to_string() }
+        if ruby_bin_path.exists() { ruby_bin_path.display().to_string() }
         else { "(not bootstrapped — run `arc bootstrap`)".to_string() }
     );
 
-    // Ruby バージョンを実際に走らして表示（LD_LIBRARY_PATH を設定して共有ライブラリを解決）
-    if ruby_bin.exists() {
-        let ruby_lib = env_dir.join("ruby_runtime").join("lib");
-        let ld_path = match env::var_os("LD_LIBRARY_PATH") {
-            Some(current) => {
-                let mut paths = vec![ruby_lib];
-                paths.extend(env::split_paths(&current));
-                env::join_paths(paths).unwrap_or_default()
-            }
-            None => ruby_lib.into_os_string(),
-        };
+    // Ruby バージョンを実際に走らせて表示（共有ライブラリを解決してから実行）
+    if ruby_bin_path.exists() {
+        let mut cmd = std::process::Command::new(&ruby_bin_path);
+        cmd.arg("--version");
 
-        let out = std::process::Command::new(&ruby_bin)
-            .arg("--version")
-            .env("LD_LIBRARY_PATH", ld_path)
-            .output();
+        // LD_LIBRARY_PATH を設定 (runner と同じロジックを共有)
+        if let Some(ld_path) = build_ld_library_path(&env_dir) {
+            cmd.env("LD_LIBRARY_PATH", ld_path);
+        }
 
-        if let Ok(o) = out {
+        if let Ok(o) = cmd.output() {
             let ver = if !o.stdout.is_empty() {
                 String::from_utf8_lossy(&o.stdout).to_string()
             } else {
@@ -316,6 +308,52 @@ pub fn env() -> Result<()> {
     }
 
     eprintln!();
+    Ok(())
+}
+
+// ─────────────────────────────────────────────
+// arc shell
+// ─────────────────────────────────────────────
+
+pub fn shell() -> Result<()> {
+    let cwd = env::current_dir()?;
+    let project = FluxProject::open(&cwd)
+        .context("Flux プロジェクトが見つかりません。`arc init` を実行してください。")?;
+
+    // 起動するシェルを決定: $SHELL > /bin/bash
+    let shell_bin = env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
+
+    eprintln!("🐚 arc shell: entering isolated environment");
+    eprintln!("   Shell:   {}", shell_bin);
+    eprintln!("   GEM_HOME: {}", cwd.join(crate::signals::ARC_ENV_DIR).display());
+    eprintln!("   Type 'exit' to leave the arc environment.");
+    eprintln!();
+
+    let mut command = std::process::Command::new(&shell_bin);
+    inject_isolated_env(&mut command, &cwd)?;
+
+    // ARC_SHELL=1 をセットしておくと、PS1 等でカスタマイズできる
+    command.env("ARC_SHELL", "1");
+
+    project.record(
+        SignalType::Custom("shell_enter".to_string()),
+        json!({ "shell": &shell_bin }),
+    )?;
+
+    // インタラクティブシェルを起動。ユーザーが exit するまでブロック。
+    let status = command
+        .status()
+        .map_err(|e| anyhow::anyhow!("シェル '{}' の起動に失敗しました: {}", shell_bin, e))?;
+
+    let exit_code = status.code().unwrap_or(0);
+    project.record(
+        SignalType::Custom("shell_exit".to_string()),
+        json!({ "exit_code": exit_code }),
+    )?;
+
+    eprintln!();
+    eprintln!("🐚 arc shell: exited (code: {})", exit_code);
+
     Ok(())
 }
 

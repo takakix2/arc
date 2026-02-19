@@ -6,7 +6,9 @@ use std::collections::HashMap;
 // ─────────────────────────────────────────────
 
 /// 個々のコマンド実行記録（exec_start + exec_end のペア）
+/// Phase 2 で `cwd`, `ended_at`, `start_id` の内容を利用予定。
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Execution {
     pub command: String,
     pub args: Vec<String>,

@@ -142,6 +142,39 @@ $ arc export --format github-action > .github/workflows/setup.yml
 - [ ] Selective replay (by type, time range, signal ID)
 - [ ] Parallel replay (independent operations executed concurrently)
 
+### 3.4 Session-based Architecture (arc shell)
+
+**Status**: ✅ Done (2026-02-19)
+
+Explicit subshell mode to manage environments safely without shims or implicit side-effects.
+
+```bash
+# Enter project context
+$ cd my-project
+$ arc shell
+🐚 arc shell: entering isolated environment
+   Shell:   /bin/bash
+   GEM_HOME: .arc/env
+   Type 'exit' to leave the arc environment.
+
+$ ruby app.rb      # Uses .arc/env/ruby_runtime/bin/ruby
+$ gem install ...  # Installs to .arc/env
+$ exit
+
+🐚 arc shell: exited (code: 0)
+```
+
+**Implementation**:
+- `inject_isolated_env()` in `runner.rs` handles all env-var setup (shared with `arc run`)
+- `ARC_SHELL=1` is set so PS1/PROMPT etc. can detect the sub-shell
+- `shell_enter` / `shell_exit` signals recorded in `.flux/signals.jsonl`
+- `SignalType::Custom(String)` added to support free-form signal types
+
+**Design decision**: Safety over convenience.
+- No global PATH pollution.
+- Explicit entry/exit events recorded in Flux log.
+- Works with any `$SHELL` (bash, zsh, fish, etc.).
+
 ---
 
 ## Phase 4: Ecosystem 📋

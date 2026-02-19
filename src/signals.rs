@@ -49,22 +49,25 @@ pub enum SignalType {
     Remove,
     Bootstrap,
     Undo,
+    /// 自由形式のシグナルタイプ (arc shell 等の拡張煎に使用)
+    Custom(String),
 }
 
 impl fmt::Display for SignalType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
-            SignalType::Init => "init",
-            SignalType::ExecStart => "exec_start",
-            SignalType::ExecEnd => "exec_end",
+            SignalType::Init         => "init",
+            SignalType::ExecStart    => "exec_start",
+            SignalType::ExecEnd      => "exec_end",
             SignalType::InstallStart => "install_start",
-            SignalType::InstallEnd => "install_end",
-            SignalType::RunStart => "run_start",
-            SignalType::RunEnd => "run_end",
-            SignalType::Add => "add",
-            SignalType::Remove => "remove",
-            SignalType::Bootstrap => "bootstrap",
-            SignalType::Undo => "undo",
+            SignalType::InstallEnd   => "install_end",
+            SignalType::RunStart     => "run_start",
+            SignalType::RunEnd       => "run_end",
+            SignalType::Add          => "add",
+            SignalType::Remove       => "remove",
+            SignalType::Bootstrap    => "bootstrap",
+            SignalType::Undo         => "undo",
+            SignalType::Custom(name) => name.as_str(),
         };
         write!(f, "{}", s)
     }
@@ -96,7 +99,8 @@ pub struct Signal {
 /// Flux Core プロジェクト。
 /// `.flux/` ディレクトリを管理し、Signal の記録・読み込みを行う。
 pub struct FluxProject {
-    /// プロジェクトルートディレクトリ
+    /// プロジェクトルートディレクトリ (Phase 2 再構築で使用予定)
+    #[allow(dead_code)]
     pub root: PathBuf,
     /// `.flux/` ディレクトリのパス
     pub flux_dir: PathBuf,
