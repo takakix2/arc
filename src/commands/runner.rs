@@ -80,7 +80,7 @@ pub fn build_rubylib_path(env_path: &Path) -> Option<OsString> {
             e.path().is_dir()
                 && e.file_name()
                     .to_str()
-                    .map_or(false, |n| n.chars().next().map_or(false, |c| c.is_numeric()))
+                    .is_some_and(|n| n.chars().next().is_some_and(|c| c.is_numeric()))
         })?;
 
     let ver_path = ver_dir.path();
@@ -206,9 +206,17 @@ pub fn inject_isolated_env(command: &mut Command, cwd: &Path) -> Result<()> {
     }
 
     // PATH: ruby_runtime/bin を最優先
+    let bin_path = ruby_bin(&env_path);
+    if !bin_path.exists() {
+        anyhow::bail!(
+            "Ruby runtime not found in {:?}.\nRun `arc bootstrap` to install it.",
+            bin_path.parent().unwrap()
+        );
+    }
+
     let new_path = {
         let mut paths = vec![
-            ruby_runtime_bin(&env_path),
+            bin_path,
             env_path.join("bin"),
         ];
         if let Some(current) = env::var_os("PATH") {

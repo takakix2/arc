@@ -151,12 +151,11 @@ pub fn remove_gem(gemfile: &Path, gem_name: &str) -> Result<bool> {
     let new_lines: Vec<&str> = content
         .lines()
         .filter(|line| {
-            if let Some(entry) = parse_gem_line(line) {
-                if entry.name == gem_name {
+            if let Some(entry) = parse_gem_line(line)
+                && entry.name == gem_name {
                     removed = true;
                     return false; // この行を除外
                 }
-            }
             true
         })
         .collect();

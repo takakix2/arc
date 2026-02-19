@@ -64,8 +64,8 @@ pub fn render_full(signals: &[signals::Signal], cwd: &Path) -> Result<()> {
     // ── 依存関係 (Gemfile) ──────────────────
     // cwd を基準にした絶対パスで読み取る（相対パス依存を排除）
     let gemfile_path = cwd.join("Gemfile");
-    if let Ok(gems) = gemfile::parse(&gemfile_path) {
-        if !gems.is_empty() {
+    if let Ok(gems) = gemfile::parse(&gemfile_path)
+        && !gems.is_empty() {
             eprintln!();
             eprintln!("  Dependencies ({}):", gems.len());
             for gem in &gems {
@@ -75,7 +75,6 @@ pub fn render_full(signals: &[signals::Signal], cwd: &Path) -> Result<()> {
                 }
             }
         }
-    }
 
     // ── コマンド統計テーブル ──────────────────
     if !stats.is_empty() {
@@ -125,8 +124,7 @@ pub fn render_diff(signals: &[signals::Signal]) -> Result<()> {
 
     // 最新の「意味のある」シグナルを探す（exec/install の開始終了ではなくメタデータ系のみ）
     let last = signals.iter()
-        .filter(|s| matches!(s.r_type.as_str(), "add" | "remove" | "undo" | "bootstrap" | "init"))
-        .last();
+        .rfind(|s| matches!(s.r_type.as_str(), "add" | "remove" | "undo" | "bootstrap" | "init"));
 
     let last = match last {
         Some(s) => s,
