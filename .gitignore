@@ -6,6 +6,10 @@ example_ruby_app/
 nested_app/
 signals.jsonl
 
+# rsh (Ruby Shell) — 独立リポジトリとして管理。配布時は arc のインストールスクリプトで統合する。
+# See: docs/RELEASE.md
+ruby/
+
 # Local Design Docs
 ruby版uv_arc正式版.md
 ruby版uv_arc正式版.txt
